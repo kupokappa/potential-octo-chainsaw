@@ -11,18 +11,17 @@
 
 #include "CoreMinimal.h"
 
-class SWITCHINPUTPASSTHRU_API SerialPort
-{
+class SWITCHINPUTPASSTHRU_API FSerialPort {
 public:
-	SerialPort();
+	FSerialPort();
 
-	SerialPort(const char* port, unsigned long BaudRate);
+	FSerialPort(const char* port, unsigned long BaudRate);
 
 	// Initialization
 	void Initialize(const char* port, unsigned long BaudRate);
 
 	// Serial IO
-	void Receive(unsigned char &data, unsigned int numBytes);
+	void Receive(unsigned char& data, unsigned int numBytes);
 	void Send(unsigned char* data, unsigned int numBytes);
 
 	// State handling
@@ -31,7 +30,7 @@ public:
 	void Disconnect();
 	bool GetIsConnected();
 
-	~SerialPort();
+	~FSerialPort();
 
 private:
 	HANDLE _handle;

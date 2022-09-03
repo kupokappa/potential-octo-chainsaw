@@ -4,26 +4,26 @@
 #include "Macros.h"
 #include <string>
 #include <sstream>
+#include <iostream>
 
 #if PLATFORM_WINDOWS
 #include "Windows/AllowWindowsPlatformTypes.h"
 #include "Windows/prewindowsapi.h"
 #include "Winnt.h"
-#include <iostream>
 #endif
 
-SerialPort::SerialPort() :
-	isConnected(false)
-{
+FSerialPort::FSerialPort() :
+	isConnected(false) {
 }
 
-SerialPort::SerialPort(const char* port, unsigned long baudRate) :
-	isConnected(false) 
-{
+FSerialPort::FSerialPort(const char* port, unsigned long baudRate) :
+	isConnected(false) {
 	Initialize(port, baudRate);
 }
 
-void SerialPort::Initialize(const char* port, unsigned long baudRate) {
+void FSerialPort::Initialize(const char* port, unsigned long baudRate) {
+
+	FSerialPort::FSerialPort();
 
 	// Init serial port handle
 	_handle = CreateFileA(port, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -53,11 +53,9 @@ void SerialPort::Initialize(const char* port, unsigned long baudRate) {
 #ifdef UE_BUILD_DEBUG
 		LogErr("Invalid serial parameters.");
 #endif
-
 		// TODO: Report to the user that this task failed.
 		return;
 	}
-
 	// Successfully opened a handle to our port; set params
 	_serialParams.DCBlength = sizeof(DCB);
 	_serialParams.BaudRate = baudRate;
@@ -91,39 +89,32 @@ void SerialPort::Initialize(const char* port, unsigned long baudRate) {
 #endif
 }
 
-void SerialPort::Receive(unsigned char& data, unsigned int numBytes)
-{
+void FSerialPort::Receive(unsigned char& data, unsigned int numBytes) {
 	ReadFile(_handle, &data, numBytes, NULL, NULL);
 }
 
-void SerialPort::Send(unsigned char* data, unsigned int numBytes)
-{
+void FSerialPort::Send(unsigned char* data, unsigned int numBytes) {
 	WriteFile(_handle, data, numBytes, NULL, NULL);
 }
 
-void SerialPort::Connect()
-{
+void FSerialPort::Connect() {
 	//
 }
 
-void SerialPort::Disconnect()
-{
-	
+void FSerialPort::Disconnect() {
+	//
 }
 
-bool SerialPort::GetIsConnected()
-{
+bool FSerialPort::GetIsConnected() {
 	return isConnected;
 }
 
-void SerialPort::Sync()
-{
+void FSerialPort::Sync() {
 	// Perform handshake here
 }
 
 // Deconstructor
-SerialPort::~SerialPort()
-{
+FSerialPort::~FSerialPort() {
 	if (isConnected) {
 		if (CloseHandle(_handle)) {
 			/* Print an on-screen debug message telling us
@@ -135,7 +126,9 @@ SerialPort::~SerialPort()
 			isConnected = false;
 		}
 		else {
+#ifdef UE_BUILD_DEBUG
 			LogErr("Failed to close serial handle");
+#endif
 		}
 	}
 }

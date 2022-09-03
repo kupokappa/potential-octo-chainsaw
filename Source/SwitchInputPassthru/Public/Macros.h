@@ -4,8 +4,7 @@
 
 #include "CoreMinimal.h"
 
-class SWITCHINPUTPASSTHRU_API Macros
-{
+class SWITCHINPUTPASSTHRU_API Macros {
 #define LogSuccess(InString) if(GEngine){GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, (FString)InString);}
 #define Log(InString) if(GEngine){GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Cyan, (FString)InString);}
 #define LogWarn(InString) if(GEngine){GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, (FString)InString);}

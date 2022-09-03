@@ -7,11 +7,21 @@
 #include "InputEmuGameMode.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
-class SWITCHINPUTPASSTHRU_API AInputEmuGameMode : public AGameModeBase
-{
+class SWITCHINPUTPASSTHRU_API AInputEmuGameMode : public AGameModeBase {
 	GENERATED_BODY()
-	
+
+public:
+	AInputEmuGameMode();
+
+	UPROPERTY(EditAnywhere)
+	FString PortName;
+
+	~AInputEmuGameMode();
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
 };
