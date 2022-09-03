@@ -2,14 +2,13 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+
 #if PLATFORM_WINDOWS
 #include "Windows/AllowWindowsPlatformTypes.h"
 #include "Windows/prewindowsapi.h"
 #include "Winnt.h"
-#include <iostream>
 #endif
-
-#include "CoreMinimal.h"
 
 class SWITCHINPUTPASSTHRU_API FSerialPort {
 public:
