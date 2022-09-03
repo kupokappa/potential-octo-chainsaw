@@ -7,16 +7,15 @@
 #include "UserPawn.generated.h"
 
 UCLASS()
-class SWITCHINPUTPASSTHRU_API AUserPawn : public APawn
-{
+class SWITCHINPUTPASSTHRU_API AUserPawn : public APawn {
 	GENERATED_BODY()
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Sets default values for this pawn's properties
+public:
+	// Set default values for this pawn's properties
 	AUserPawn();
 
 	// Called every frame
@@ -29,7 +28,11 @@ public:
 	UPROPERTY(EditAnywhere)
 	USceneComponent* UserVisComponent;
 
-	unsigned char flush[9] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+	// Declare and assign SerialPort::Initialize() delegate
+	DECLARE_DELEGATE_TwoParams(InitSerialDelegate, const char*, unsigned long);
+	InitSerialDelegate InitSerial;
+
+	const unsigned char flush[9] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 	// Input events
 	void AButtonPressed();
@@ -44,4 +47,5 @@ public:
 	void YButtonPressed();
 	void YButtonReleased();
 
+	~AUserPawn();
 };

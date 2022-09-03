@@ -7,44 +7,48 @@
 #include "Macros.h"
 #include <Kismet/GameplayStatics.h>
 
+// Create shared reference construct for FSerialPort
+TSharedRef<FSerialPort> _sp(new FSerialPort);
+
 // Sets default values
-AUserPawn::AUserPawn()
-{
+AUserPawn::AUserPawn() {
 	// This actor ticks every frame
 	PrimaryActorTick.bCanEverTick = true;
 
 	// This pawn is controlled by player 0
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 
-	// Create root component to attach things to
+	// Create a root component to attach things to
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 
+	// Create and attach a CameraComponent to RootComponent
 	UCameraComponent* UserCam = CreateDefaultSubobject<UCameraComponent>(TEXT("UserCamera"));
-	UserVisComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("UserVisibleComponent"));
-
 	UserCam->SetupAttachment(RootComponent);
+
+	// Set up initial camera position and rotation
 	UserCam->SetRelativeLocation(FVector(-250.0f, 0.0f, 250.0f));
 	UserCam->SetRelativeRotation(FRotator(-45.0f, 0.0f, 0.0f));
+
+	// Create and attach a Static Mesh to RootComponent
+	UserVisComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("UserVisibleComponent"));
 	UserVisComponent->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
-void AUserPawn::BeginPlay()
-{
-	Super::BeginPlay();
+void AUserPawn::BeginPlay() {
+	// Bind UserPawn's InitSerial event to FSerialPort::Initialize()
+	InitSerial.BindSP(_sp, &FSerialPort::Initialize);
 
+	Super::BeginPlay();
 }
 
 // Called every frame
-void AUserPawn::Tick(float DeltaTime)
-{
+void AUserPawn::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
-void AUserPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
+void AUserPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) {
 	// Bind input events
 	InputComponent->BindAction("SW_A", IE_Pressed, this, &AUserPawn::AButtonPressed);
 	InputComponent->BindAction("SW_A", IE_Released, this, &AUserPawn::AButtonReleased);
@@ -59,46 +63,35 @@ void AUserPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	InputComponent->BindAction("SW_Y", IE_Released, this, &AUserPawn::YButtonReleased);
 }
 
-SerialPort _port = SerialPort();
-
-void AUserPawn::AButtonPressed()
-{
+void AUserPawn::AButtonPressed() {
 #ifdef UE_BUILD_DEBUG
 	Log("Initializing port");
 #endif
-	_port.Initialize("\\\\.\\COM3", 19200);
+	// Connect to the USB-UART bridge at COM3, with a baudrate of 19200
+	InitSerial.ExecuteIfBound("\\\\.\\COM3", 19200);
 }
 
-void AUserPawn::AButtonReleased()
-{
-}
+void AUserPawn::AButtonReleased() {}
 
-void AUserPawn::BButtonPressed()
-{
+void AUserPawn::BButtonPressed() {
+	/*
 #ifdef UE_BUILD_DEBUG
 	Log("Sending flush buffer");
 #endif
 	_port.Send(flush, sizeof(flush));
+	*/
 }
 
-void AUserPawn::BButtonReleased()
-{
-}
+void AUserPawn::BButtonReleased() {}
 
-void AUserPawn::XButtonPressed()
-{
-	_port.~SerialPort();
-}
+void AUserPawn::XButtonPressed() {}
 
-void AUserPawn::XButtonReleased()
-{
-}
+void AUserPawn::XButtonReleased() {}
 
-void AUserPawn::YButtonPressed()
-{
-}
+void AUserPawn::YButtonPressed() {}
 
-void AUserPawn::YButtonReleased()
-{
-}
+void AUserPawn::YButtonReleased() {}
 
+AUserPawn::~AUserPawn() {
+
+}
