@@ -16,7 +16,7 @@ public:
 
 	FSerialPort(const char* port, unsigned long BaudRate);
 
-	// Initialization
+	// Serial port initialization
 	void Initialize(const char* port, unsigned long BaudRate);
 
 	// Serial IO
