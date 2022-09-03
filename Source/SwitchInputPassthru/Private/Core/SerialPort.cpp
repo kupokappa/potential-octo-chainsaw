@@ -6,12 +6,6 @@
 #include <sstream>
 #include <iostream>
 
-#if PLATFORM_WINDOWS
-#include "Windows/AllowWindowsPlatformTypes.h"
-#include "Windows/prewindowsapi.h"
-#include "Winnt.h"
-#endif
-
 FSerialPort::FSerialPort() :
 	isConnected(false) {
 }
@@ -132,8 +126,3 @@ FSerialPort::~FSerialPort() {
 		}
 	}
 }
-
-#if PLATFORM_WINDOWS
-#include "Windows/PostWindowsApi.h"
-#include "Windows/HideWindowsPlatformTypes.h"
-#endif
