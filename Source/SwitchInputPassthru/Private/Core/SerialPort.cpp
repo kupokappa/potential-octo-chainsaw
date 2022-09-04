@@ -20,7 +20,7 @@ void FSerialPort::Initialize(const char* port, unsigned long baudRate) {
 	FSerialPort::FSerialPort();
 
 	// Init serial port handle
-	_handle = CreateFileA(port, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	_handle = CreateFileA(port, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	// Check for an invalid handle
 	if (_handle == INVALID_HANDLE_VALUE) {
@@ -29,8 +29,17 @@ void FSerialPort::Initialize(const char* port, unsigned long baudRate) {
 #ifdef UE_BUILD_DEBUG
 		std::ostringstream oss;
 		oss << "Failed to open port \"" << port << "\": ";
+		
 		auto res = GetLastError();
-		oss << "Err " << res;
+
+		// User input non-existent port
+		if (res == ERROR_FILE_NOT_FOUND) {
+			oss << "specified port doesn't exist.";
+		}
+		else {
+			oss << "Err " << res;
+		}
+
 		LogErr(oss.str().c_str());
 #endif
 
@@ -104,7 +113,8 @@ bool FSerialPort::GetIsConnected() {
 }
 
 void FSerialPort::Sync() {
-	// Perform handshake here
+	uint8_t b;
+	Receive(b, 1);
 }
 
 // Deconstructor
