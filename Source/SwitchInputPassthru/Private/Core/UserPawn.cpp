@@ -1,10 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Core/UserPawn.h"
 #include <Core/SerialPort.h>
-#include "Camera/CameraComponent.h"
 #include "Macros.h"
+#include "Camera/CameraComponent.h"
 #include <Kismet/GameplayStatics.h>
 
 // Create shared reference construct for FSerialPort
@@ -67,8 +66,12 @@ void AUserPawn::AButtonPressed() {
 #ifdef UE_BUILD_DEBUG
 	Log("Initializing port");
 #endif
+	// TODO: check for and execute delegates based on connection state
+
 	// Connect to the USB-UART bridge at COM3, with a baudrate of 19200
-	InitSerial.ExecuteIfBound("\\\\.\\COM3", 19200);
+	if (InitSerial.IsBound()) {
+		InitSerial.Execute("\\\\.\\COM3", 19200);
+	}
 }
 
 void AUserPawn::AButtonReleased() {}
