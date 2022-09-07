@@ -36,6 +36,8 @@ public:
 		OUT_OF_SYNC
 	};
 
+	BridgeState _state;
+
 	struct OutputPacket {
 		uint8_t command;
 		uint8_t crc8_ccitt;
@@ -58,6 +60,7 @@ public:
 		RESP_SYNC_OK = 0x33
 	};
 
+	// Flush buffer packet
 	uint8_t flush[9] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 	~FSerialPort();

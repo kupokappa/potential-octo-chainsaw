@@ -7,11 +7,12 @@
 #include <iostream>
 
 FSerialPort::FSerialPort() :
-	isConnected(false) {
-}
+	isConnected(false),
+	_state(OUT_OF_SYNC) {}
 
 FSerialPort::FSerialPort(const char* port, unsigned long baudRate) :
-	isConnected(false) {
+	isConnected(false),
+	_state(OUT_OF_SYNC) {
 	Initialize(port, baudRate);
 }
 
@@ -29,7 +30,7 @@ void FSerialPort::Initialize(const char* port, unsigned long baudRate) {
 #ifdef UE_BUILD_DEBUG
 		std::ostringstream oss;
 		oss << "Failed to open port \"" << port << "\": ";
-		
+
 		auto res = GetLastError();
 
 		// User input non-existent port
@@ -108,7 +109,7 @@ void FSerialPort::Initialize(const char* port, unsigned long baudRate) {
 #endif
 }
 
-bool FSerialPort::Receive(uint8_t &data, uint32_t numBytes) {
+bool FSerialPort::Receive(uint8_t& data, uint32_t numBytes) {
 	return ReadFile(_handle, &data, numBytes, NULL, NULL);
 }
 
@@ -129,24 +130,50 @@ bool FSerialPort::GetIsConnected() {
 }
 
 void FSerialPort::Sync() {
-
-	std::ostringstream oss;
-	oss << std::showbase;
-
+	// Send flush packet to initiate sync mode
 	if (!Send(flush)) {
 		LogErr("Failed sending flush buffer");
 	}
-	
-	uint8_t inByte[1];
+
+	uint8_t inByte[1]{ 0x00 };
+	uint8_t outByte[1]{ 0x00 };
+
+	PurgeComm(_handle, PURGE_RXCLEAR | PURGE_TXCLEAR);
+
+	// Bridge responds with 0xFF
 	if (!Receive(*inByte, 1)) {
 		LogErr("Failed receiving data from bridge");
 	}
-
-	oss << "Received " << std::hex << inByte << std::endl;
-	Log(oss.str().c_str());
-
+	// Bridge responds with 0xFF
 	if (inByte[0] == RESP_SYNC_START) {
-		LogSuccess("whoa!");
+		LogSuccess("Received RESP_SYNC_START command from bridge");
+		// Send COMMAND_SYNC_1 to our bridge
+		outByte[0] = COMMAND_SYNC_1;
+		if (!Send(outByte)) {
+			LogErr("Failed sending COMMAND_SYNC_1");
+		}
+		PurgeComm(_handle, PURGE_RXCLEAR | PURGE_TXCLEAR);
+		// Bridge responds with 0xCC
+		if (!Receive(*inByte, 1)) {
+			LogErr("Failed receiving data from bridge");
+		}
+		if (inByte[0] == RESP_SYNC_1) {
+			LogSuccess("Received RESP_SYNC_1 from bridge");
+			// Send COMMAND_SYNC_2 to our bridge
+			outByte[0] = COMMAND_SYNC_2;
+			if (!Send(outByte)) {
+				LogErr("Failed sending COMMAND_SYNC_2");
+			}
+			PurgeComm(_handle, PURGE_RXCLEAR | PURGE_TXCLEAR);
+			// Bridge responds with 0x33
+			if (!Receive(*inByte, 1)) {
+				LogErr("Failed receiving data from bridge");
+			}
+			if (inByte[0] == RESP_SYNC_OK) {
+				LogSuccess("Sync OK!");
+				_state = SYNCED;
+			}
+		}
 	}
 }
 
