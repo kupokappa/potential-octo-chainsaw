@@ -75,6 +75,22 @@ void FSerialPort::Initialize(const char* port, unsigned long baudRate) {
 		return;
 	}
 
+	// Init serial timeouts
+	COMMTIMEOUTS _serialTimeouts{ 0 };
+
+	_serialTimeouts.ReadIntervalTimeout = 50;
+	_serialTimeouts.ReadTotalTimeoutConstant = 50;
+	_serialTimeouts.WriteTotalTimeoutConstant = 50;
+
+	if (!SetCommTimeouts(_handle, &_serialTimeouts)) {
+		// Print an on-screen debug message telling us our serial params couldn't be modified.
+#ifdef UE_BUILD_DEBUG
+		LogErr("Failed to set serial port timeouts.");
+#endif
+		// TODO: Report to the user that this task failed.
+		return;
+	}
+
 	// Our serial port is connected and set up
 	isConnected = true;
 
@@ -92,12 +108,12 @@ void FSerialPort::Initialize(const char* port, unsigned long baudRate) {
 #endif
 }
 
-void FSerialPort::Receive(unsigned char& data, unsigned int numBytes) {
-	ReadFile(_handle, &data, numBytes, NULL, NULL);
+bool FSerialPort::Receive(uint8_t &data, uint32_t numBytes) {
+	return ReadFile(_handle, &data, numBytes, NULL, NULL);
 }
 
-void FSerialPort::Send(unsigned char* data, unsigned int numBytes) {
-	WriteFile(_handle, data, numBytes, NULL, NULL);
+bool FSerialPort::Send(uint8_t* data) {
+	return WriteFile(_handle, data, sizeof(data), NULL, NULL);
 }
 
 void FSerialPort::Connect() {
@@ -105,7 +121,7 @@ void FSerialPort::Connect() {
 }
 
 void FSerialPort::Disconnect() {
-	//
+	FSerialPort::~FSerialPort();
 }
 
 bool FSerialPort::GetIsConnected() {
@@ -113,26 +129,46 @@ bool FSerialPort::GetIsConnected() {
 }
 
 void FSerialPort::Sync() {
-	uint8_t b;
-	Receive(b, 1);
+
+	std::ostringstream oss;
+	oss << std::showbase;
+
+	if (!Send(flush)) {
+		LogErr("Failed sending flush buffer");
+	}
+	
+	uint8_t inByte[1];
+	if (!Receive(*inByte, 1)) {
+		LogErr("Failed receiving data from bridge");
+	}
+
+	oss << "Received " << std::hex << inByte << std::endl;
+	Log(oss.str().c_str());
+
+	if (inByte[0] == RESP_SYNC_START) {
+		LogSuccess("whoa!");
+	}
 }
 
 // Deconstructor
 FSerialPort::~FSerialPort() {
 	if (isConnected) {
 		if (CloseHandle(_handle)) {
-			/* Print an on-screen debug message telling us
-			the handle to our serial port couldn't be closed. */
+
 #ifdef UE_BUILD_DEBUG
-			Log("Successfully closed serial handle");
+			Log("Serial connection closed");
 #endif
-			// TODO: Report to the user that this task failed.
+
 			isConnected = false;
 		}
 		else {
+			/* Print an on-screen debug message telling us
+			the handle to our serial port couldn't be closed. */
 #ifdef UE_BUILD_DEBUG
 			LogErr("Failed to close serial handle");
 #endif
+
+			// TODO: Report to the user that this task failed.
 		}
 	}
 }
