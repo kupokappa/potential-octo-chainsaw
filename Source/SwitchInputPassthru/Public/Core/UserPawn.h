@@ -14,6 +14,9 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	// Called when the game ends
+	virtual void EndPlay(const EEndPlayReason::Type endPlayReason) override;
+
 public:
 	// Set default values for this pawn's properties
 	AUserPawn();
@@ -28,11 +31,24 @@ public:
 	UPROPERTY(EditAnywhere)
 	USceneComponent* UserVisComponent;
 
+	// User-input port name
+	UPROPERTY(EditAnywhere)
+	FString InPortName = "\\\\.\\COM3";
+
+	// Probably won't change the baud rate from this
+	UPROPERTY(EditAnywhere)
+	uint32 baudRate = 19200;
+
 	// Declare and assign SerialPort::Initialize() delegate
-	DECLARE_DELEGATE_TwoParams(InitSerialDelegate, const char*, unsigned long);
+	DECLARE_DELEGATE_TwoParams(InitSerialDelegate, const char*, unsigned long)
 	InitSerialDelegate InitSerial;
 
-	const unsigned char flush[9] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+	// Declare and assign SerialPort::Disconnect() delegate
+	DECLARE_DELEGATE(CloseSerialDelegate)
+	CloseSerialDelegate CloseSerial;
+
+	DECLARE_DELEGATE(SyncBridgeDelegate)
+	SyncBridgeDelegate SyncBridge;
 
 	// Input events
 	void AButtonPressed();
@@ -48,4 +64,7 @@ public:
 	void YButtonReleased();
 
 	~AUserPawn();
+
+private:
+
 };

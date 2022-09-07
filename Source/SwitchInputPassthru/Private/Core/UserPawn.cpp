@@ -6,6 +6,10 @@
 #include "Camera/CameraComponent.h"
 #include <Kismet/GameplayStatics.h>
 
+#include <string>
+#include <sstream>
+#include <iostream>
+
 // Create shared reference construct for FSerialPort
 TSharedRef<FSerialPort> _sp(new FSerialPort);
 
@@ -35,14 +39,37 @@ AUserPawn::AUserPawn() {
 
 // Called when the game starts or when spawned
 void AUserPawn::BeginPlay() {
-	// Bind UserPawn's InitSerial event to FSerialPort::Initialize()
+	// Bind serial event delegates
 	InitSerial.BindSP(_sp, &FSerialPort::Initialize);
+	CloseSerial.BindSP(_sp, &FSerialPort::Disconnect);
+	SyncBridge.BindSP(_sp, &FSerialPort::Sync);
 
 	Super::BeginPlay();
 }
 
+void AUserPawn::EndPlay(const EEndPlayReason::Type endPlayReason) {
+	// Close the serial port before quitting, if it's open
+	CloseSerial.ExecuteIfBound();
+
+	Super::EndPlay(endPlayReason);
+}
+
+uint8_t inByte;
+std::ostringstream oss;
+
 // Called every frame
 void AUserPawn::Tick(float DeltaTime) {
+	//inByte = 0x00;
+
+	/*if (_sp.Get().Receive(inByte, 1)) {
+		if (inByte != NULL) {
+			oss.flush();
+			oss << std::showbase;
+			oss << "Received " << std::hex << inByte;
+			if (GEngine) { GEngine->AddOnScreenDebugMessage(1, 2.0f, FColor::Cyan, (FString)oss.str().c_str()); }
+		}
+	}*/
+	
 	Super::Tick(DeltaTime);
 }
 
@@ -63,20 +90,30 @@ void AUserPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 }
 
 void AUserPawn::AButtonPressed() {
+	if (!_sp.Get().GetIsConnected()) {
 #ifdef UE_BUILD_DEBUG
-	Log("Initializing port");
+		Log("Initializing port");
 #endif
-	// TODO: check for and execute delegates based on connection state
+		// TODO: check for and execute delegates based on connection state
 
-	// Connect to the USB-UART bridge at COM3, with a baudrate of 19200
-	if (InitSerial.IsBound()) {
-		InitSerial.Execute("\\\\.\\COM3", 19200);
+		// Connect to the USB-UART bridge at the specified port, with the specified baud rate
+		if (InitSerial.IsBound()) {
+			// The actual name of the port we'll connect to
+			const char* portName = TCHAR_TO_ANSI(*InPortName);
+			InitSerial.Execute(portName, 19200);
+		}
 	}
 }
 
 void AUserPawn::AButtonReleased() {}
 
 void AUserPawn::BButtonPressed() {
+	if (_sp.Get().GetIsConnected()) {
+		if (CloseSerial.IsBound()) {
+			CloseSerial.Execute();
+		}
+	}
+
 	/*
 #ifdef UE_BUILD_DEBUG
 	Log("Sending flush buffer");
@@ -87,7 +124,13 @@ void AUserPawn::BButtonPressed() {
 
 void AUserPawn::BButtonReleased() {}
 
-void AUserPawn::XButtonPressed() {}
+void AUserPawn::XButtonPressed() {
+	if (SyncBridge.IsBound()) {
+		if (_sp.Get().GetIsConnected()) {
+			SyncBridge.Execute();
+		}
+	}
+}
 
 void AUserPawn::XButtonReleased() {}
 
