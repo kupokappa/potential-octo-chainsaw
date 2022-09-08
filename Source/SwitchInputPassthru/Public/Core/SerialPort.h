@@ -36,7 +36,7 @@ public:
 		OUT_OF_SYNC
 	};
 
-	BridgeState _state;
+	BridgeState bridgeState;
 
 	struct OutputPacket {
 		uint8_t command;
