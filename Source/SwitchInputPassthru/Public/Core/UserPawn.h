@@ -31,37 +31,51 @@ public:
 	UPROPERTY(EditAnywhere)
 	USceneComponent* UserVisComponent;
 
-	// User-input port name
-	UPROPERTY(EditAnywhere)
-	FString InPortName = "\\\\.\\COM3";
-
-	// Probably won't change the baud rate from this
-	UPROPERTY(EditAnywhere)
-	uint32 baudRate = 19200;
-
-	// Declare and assign SerialPort::Initialize() delegate
-	DECLARE_DELEGATE_TwoParams(InitSerialDelegate, const char*, unsigned long)
-	InitSerialDelegate InitSerial;
-
-	// Declare and assign SerialPort::Disconnect() delegate
-	DECLARE_DELEGATE(CloseSerialDelegate)
-	CloseSerialDelegate CloseSerial;
-
-	DECLARE_DELEGATE(SyncBridgeDelegate)
-	SyncBridgeDelegate SyncBridge;
-
-	// Input events
+	/* Input events */
+	// Face buttons
 	void AButtonPressed();
 	void AButtonReleased();
-
 	void BButtonPressed();
 	void BButtonReleased();
-
 	void XButtonPressed();
 	void XButtonReleased();
-
 	void YButtonPressed();
 	void YButtonReleased();
+	
+	void PlusButtonPressed();
+	void PlusButtonReleased();
+	void MinusButtonPressed();
+	void MinusButtonReleased();
+	void HomeButtonPressed();
+	void HomeButtonReleased();
+	void CaptureButtonPressed();
+	void CaptureButtonReleased();
+
+	// Stick buttons
+	void LStickButtonPressed();
+	void LStickttonReleased();
+	void RStickButtonPressed();
+	void RStickButtonReleased();
+
+	// Shoulder buttons
+	void LButtonPressed();
+	void LButtonReleased();
+	void RButtonPressed();
+	void RButtonReleased();
+	void ZLButtonPressed();
+	void ZLButtonReleased();
+	void ZRButtonPressed();
+	void ZRButtonReleased();
+
+	// Hat
+	void UpButtonPressed();
+	void UpButtonReleased();
+	void DownButtonPressed();
+	void DownButtonReleased();
+	void LeftButtonPressed();
+	void LeftButtonReleased();
+	void RightButtonPressed();
+	void RightButtonReleased();
 
 	~AUserPawn();
 

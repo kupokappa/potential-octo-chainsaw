@@ -2,6 +2,7 @@
 
 #include "Core/UserPawn.h"
 #include <Core/SerialPort.h>
+#include <Core/InputEmuGameMode.h>
 #include "Macros.h"
 #include "Camera/CameraComponent.h"
 #include <Kismet/GameplayStatics.h>
@@ -10,8 +11,7 @@
 #include <sstream>
 #include <iostream>
 
-// Create shared reference construct for FSerialPort
-TSharedRef<FSerialPort> _sp(new FSerialPort);
+AInputEmuGameMode* gameMode;
 
 // Sets default values
 AUserPawn::AUserPawn() {
@@ -39,104 +39,114 @@ AUserPawn::AUserPawn() {
 
 // Called when the game starts or when spawned
 void AUserPawn::BeginPlay() {
-	// Bind serial event delegates
-	InitSerial.BindSP(_sp, &FSerialPort::Initialize);
-	CloseSerial.BindSP(_sp, &FSerialPort::Disconnect);
-	SyncBridge.BindSP(_sp, &FSerialPort::Sync);
+	// Get GameMode reference
+	gameMode = GetWorld()->GetAuthGameMode<AInputEmuGameMode>();
 
 	Super::BeginPlay();
 }
 
 void AUserPawn::EndPlay(const EEndPlayReason::Type endPlayReason) {
-	// Close the serial port before quitting, if it's open
-	CloseSerial.ExecuteIfBound();
 
 	Super::EndPlay(endPlayReason);
 }
 
-uint8_t inByte;
-std::ostringstream oss;
-
 // Called every frame
 void AUserPawn::Tick(float DeltaTime) {
-	//inByte = 0x00;
 
-	/*if (_sp.Get().Receive(inByte, 1)) {
-		if (inByte != NULL) {
-			oss.flush();
-			oss << std::showbase;
-			oss << "Received " << std::hex << inByte;
-			if (GEngine) { GEngine->AddOnScreenDebugMessage(1, 2.0f, FColor::Cyan, (FString)oss.str().c_str()); }
-		}
-	}*/
-	
 	Super::Tick(DeltaTime);
 }
 
 // Called to bind functionality to input
 void AUserPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) {
-	// Bind input events
+	/* Bind input events */
+	// Face buttons
 	InputComponent->BindAction("SW_A", IE_Pressed, this, &AUserPawn::AButtonPressed);
 	InputComponent->BindAction("SW_A", IE_Released, this, &AUserPawn::AButtonReleased);
-
 	InputComponent->BindAction("SW_B", IE_Pressed, this, &AUserPawn::BButtonPressed);
 	InputComponent->BindAction("SW_B", IE_Released, this, &AUserPawn::BButtonReleased);
-
 	InputComponent->BindAction("SW_X", IE_Pressed, this, &AUserPawn::XButtonPressed);
 	InputComponent->BindAction("SW_X", IE_Released, this, &AUserPawn::XButtonReleased);
-
 	InputComponent->BindAction("SW_Y", IE_Pressed, this, &AUserPawn::YButtonPressed);
 	InputComponent->BindAction("SW_Y", IE_Released, this, &AUserPawn::YButtonReleased);
+
+	InputComponent->BindAction("SW_PLUS", IE_Pressed, this, &AUserPawn::PlusButtonPressed);
+	InputComponent->BindAction("SW_PLUS", IE_Released, this, &AUserPawn::PlusButtonReleased);
+	InputComponent->BindAction("SW_MINUS", IE_Pressed, this, &AUserPawn::MinusButtonPressed);
+	InputComponent->BindAction("SW_MINUS", IE_Released, this, &AUserPawn::MinusButtonReleased);
+	InputComponent->BindAction("SW_HOME", IE_Pressed, this, &AUserPawn::HomeButtonPressed);
+	InputComponent->BindAction("SW_HOME", IE_Released, this, &AUserPawn::HomeButtonReleased);
+	InputComponent->BindAction("SW_CAPTURE", IE_Pressed, this, &AUserPawn::CaptureButtonPressed);
+	InputComponent->BindAction("SW_CAPTURE", IE_Released, this, &AUserPawn::CaptureButtonReleased);
+
+	InputComponent->BindAction("SW_RStick", IE_Pressed, this, &AUserPawn::RStickButtonPressed);
+	InputComponent->BindAction("SW_RStick", IE_Released, this, &AUserPawn::RStickButtonReleased);
+	InputComponent->BindAction("SW_LStick", IE_Pressed, this, &AUserPawn::LStickButtonPressed);
+	InputComponent->BindAction("SW_LStick", IE_Released, this, &AUserPawn::LStickttonReleased);
+	
+	InputComponent->BindAction("SW_L", IE_Pressed, this, &AUserPawn::LButtonPressed);
+	InputComponent->BindAction("SW_L", IE_Released, this, &AUserPawn::LButtonReleased);
+	InputComponent->BindAction("SW_R", IE_Pressed, this, &AUserPawn::RButtonPressed);
+	InputComponent->BindAction("SW_R", IE_Released, this, &AUserPawn::RButtonReleased);
+	InputComponent->BindAction("SW_ZL", IE_Pressed, this, &AUserPawn::ZLButtonPressed);
+	InputComponent->BindAction("SW_ZL", IE_Released, this, &AUserPawn::ZLButtonReleased);
+	InputComponent->BindAction("SW_ZR", IE_Pressed, this, &AUserPawn::ZRButtonPressed);
+	InputComponent->BindAction("SW_ZR", IE_Released, this, &AUserPawn::ZRButtonReleased);
+
+	InputComponent->BindAction("SW_HAT_U", IE_Pressed, this, &AUserPawn::UpButtonPressed);
+	InputComponent->BindAction("SW_HAT_U", IE_Released, this, &AUserPawn::UpButtonReleased);
+	InputComponent->BindAction("SW_HAT_D", IE_Pressed, this, &AUserPawn::DownButtonPressed);
+	InputComponent->BindAction("SW_HAT_D", IE_Released, this, &AUserPawn::DownButtonReleased);
+	InputComponent->BindAction("SW_HAT_L", IE_Pressed, this, &AUserPawn::LeftButtonPressed);
+	InputComponent->BindAction("SW_HAT_L", IE_Released, this, &AUserPawn::LeftButtonReleased);
+	InputComponent->BindAction("SW_HAT_R", IE_Pressed, this, &AUserPawn::RightButtonPressed);
+	InputComponent->BindAction("SW_HAT_R", IE_Released, this, &AUserPawn::RightButtonReleased);
 }
 
-void AUserPawn::AButtonPressed() {
-	if (!_sp.Get().GetIsConnected()) {
-#ifdef UE_BUILD_DEBUG
-		Log("Initializing port");
-#endif
-		// TODO: check for and execute delegates based on connection state
+/* Input events */
+// Face buttons
+void AUserPawn::AButtonPressed() { gameMode->HandleABtnPressed(); }
+void AUserPawn::AButtonReleased() {	gameMode->HandleABtnReleased(); }
+void AUserPawn::BButtonPressed() { gameMode->HandleBBtnPressed(); }
+void AUserPawn::BButtonReleased() { gameMode->HandleBBtnReleased(); }
+void AUserPawn::XButtonPressed() { gameMode->HandleXBtnPressed(); }
+void AUserPawn::XButtonReleased() { gameMode->HandleXBtnReleased(); }
+void AUserPawn::YButtonPressed() { gameMode->HandleYBtnPressed(); }
+void AUserPawn::YButtonReleased() { gameMode->HandleYBtnReleased(); }
 
-		// Connect to the USB-UART bridge at the specified port, with the specified baud rate
-		if (InitSerial.IsBound()) {
-			// The actual name of the port we'll connect to
-			const char* portName = TCHAR_TO_ANSI(*InPortName);
-			InitSerial.Execute(portName, 19200);
-		}
-	}
-}
+void AUserPawn::PlusButtonPressed() { gameMode->HandlePlusBtnPressed(); }
+void AUserPawn::PlusButtonReleased() { gameMode->HandlePlusBtnReleased(); }
+void AUserPawn::MinusButtonPressed() { gameMode->HandleMinusBtnPressed(); }
+void AUserPawn::MinusButtonReleased() { gameMode->HandleMinusBtnReleased(); }
+void AUserPawn::HomeButtonPressed() { gameMode->HandleHomeBtnPressed(); }
+void AUserPawn::HomeButtonReleased() { gameMode->HandleHomeBtnReleased(); }
+void AUserPawn::CaptureButtonPressed() { gameMode->HandleCaptureBtnPressed(); }
+void AUserPawn::CaptureButtonReleased() { gameMode->HandleCaptureBtnReleased(); }
 
-void AUserPawn::AButtonReleased() {}
+// Stick buttons
+void AUserPawn::LStickButtonPressed() { gameMode->HandleLStickBtnPressed(); }
+void AUserPawn::LStickttonReleased() { gameMode->HandleLStickBtnReleased(); }
+void AUserPawn::RStickButtonPressed() { gameMode->HandleRStickBtnPressed(); }
+void AUserPawn::RStickButtonReleased() { gameMode->HandleRStickBtnReleased(); }
 
-void AUserPawn::BButtonPressed() {
-	if (_sp.Get().GetIsConnected()) {
-		if (CloseSerial.IsBound()) {
-			CloseSerial.Execute();
-		}
-	}
+// Shoulder buttons
+void AUserPawn::LButtonPressed() { gameMode->HandleLBtnPressed(); }
+void AUserPawn::LButtonReleased() { gameMode->HandleLBtnReleased(); }
+void AUserPawn::RButtonPressed() { gameMode->HandleRBtnPressed(); }
+void AUserPawn::RButtonReleased() { gameMode->HandleRBtnReleased(); }
+void AUserPawn::ZLButtonPressed() { gameMode->HandleZLBtnPressed(); }
+void AUserPawn::ZLButtonReleased() { gameMode->HandleZLBtnReleased(); }
+void AUserPawn::ZRButtonPressed() { gameMode->HandleZRBtnPressed(); }
+void AUserPawn::ZRButtonReleased() { gameMode->HandleZRBtnReleased(); }
 
-	/*
-#ifdef UE_BUILD_DEBUG
-	Log("Sending flush buffer");
-#endif
-	_port.Send(flush, sizeof(flush));
-	*/
-}
-
-void AUserPawn::BButtonReleased() {}
-
-void AUserPawn::XButtonPressed() {
-	if (SyncBridge.IsBound()) {
-		if (_sp.Get().GetIsConnected()) {
-			SyncBridge.Execute();
-		}
-	}
-}
-
-void AUserPawn::XButtonReleased() {}
-
-void AUserPawn::YButtonPressed() {}
-
-void AUserPawn::YButtonReleased() {}
+// Hat
+void AUserPawn::UpButtonPressed() { gameMode->HandleUpBtnPressed(); }
+void AUserPawn::UpButtonReleased() { gameMode->HandleUpBtnReleased(); }
+void AUserPawn::DownButtonPressed() { gameMode->HandleDownBtnPressed(); }
+void AUserPawn::DownButtonReleased() { gameMode->HandleDownBtnReleased(); }
+void AUserPawn::LeftButtonPressed() { gameMode->HandleLeftBtnPressed(); }
+void AUserPawn::LeftButtonReleased() { gameMode->HandleLeftBtnReleased(); }
+void AUserPawn::RightButtonPressed() { gameMode->HandleRightBtnPressed(); }
+void AUserPawn::RightButtonReleased() { gameMode->HandleRightBtnReleased(); }
 
 AUserPawn::~AUserPawn() {
 
